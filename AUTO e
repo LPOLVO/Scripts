@@ -1,0 +1,84 @@
+AUTO E : local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+local Window = Rayfield:CreateWindow({
+   Name = "Gemini Utility v3",
+   LoadingTitle = "Logic Rebuilt",
+   LoadingSubtitle = "Physical Key Simulation",
+   ConfigurationSaving = {
+      Enabled = true,
+      FolderName = "GeminiScripts",
+      FileName = "Strict1Config"
+   }
+})
+
+local Tab = Window:CreateTab("Main", 4483362458)
+
+local _G = _G or {}
+_G.AutoE = false
+_G.AutoEquip = false
+_G.Speed = 0.05
+
+local Player = game:GetService("Players").LocalPlayer
+local VIM = game:GetService("VirtualInputManager")
+
+-- THE FIX: Simulates pressing the "1" key to equip
+Tab:CreateToggle({
+   Name = "Force Equip Slot 1",
+   CurrentValue = false,
+   Flag = "EquipToggle",
+   Callback = function(Value)
+      _G.AutoEquip = Value
+      if Value then
+         task.spawn(function()
+            while _G.AutoEquip do
+               local Char = Player.Character
+               if Char and Char:FindFirstChild("Humanoid") then
+                  -- Detect if we are NOT holding a tool
+                  local currentTool = Char:FindFirstChildOfClass("Tool")
+                  
+                  if not currentTool then
+                     -- Physically "Press" the 1 key to trigger slot 1
+                     VIM:SendKeyEvent(true, Enum.KeyCode.One, false, game)
+                     task.wait(0.01)
+                     VIM:SendKeyEvent(false, Enum.KeyCode.One, false, game)
+                  end
+               end
+               task.wait(0.5) -- Checked every half second to avoid spamming the key
+            end
+         end)
+      end
+   end,
+})
+
+Tab:CreateSection("Key Spammer")
+
+Tab:CreateToggle({
+   Name = "Auto Press 'E'",
+   CurrentValue = false,
+   Flag = "EToggle",
+   Callback = function(Value)
+      _G.AutoE = Value
+      if Value then
+         task.spawn(function()
+            while _G.AutoE do
+               VIM:SendKeyEvent(true, Enum.KeyCode.E, false, game)
+               task.wait(0.01)
+               VIM:SendKeyEvent(false, Enum.KeyCode.E, false, game)
+               task.wait(_G.Speed)
+            end
+         end)
+      end
+   end,
+})
+
+Tab:CreateSlider({
+   Name = "E Delay",
+   Range = {0.01, 0.5},
+   Increment = 0.01,
+   Suffix = "s",
+   CurrentValue = 0.05,
+   Flag = "DelaySlider",
+   Callback = function(Value)
+      _G.Speed = Value
+   end,
+})
