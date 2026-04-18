@@ -1,0 +1,1199 @@
+-- ╔══════════════════════════════════════════════════════╗
+-- ║         LP10 HUB | BLOX FRUITS EDITION              ║
+-- ║         BY @LPOLVO                                   ║
+-- ║         DRAGGABLE | RESIZABLE | TABS | MOBILE        ║
+-- ╚══════════════════════════════════════════════════════╝
+
+repeat wait() until game.Players.LocalPlayer
+
+-- ============================================================
+-- SERVICES
+-- ============================================================
+local Players        = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local CoreGui        = game:GetService("CoreGui")
+local RunService     = game:GetService("RunService")
+local TweenService   = game:GetService("TweenService")
+local RS             = game:GetService("ReplicatedStorage")
+local player         = Players.LocalPlayer
+
+-- ============================================================
+-- ANTI-DETECT
+-- ============================================================
+if getrawmetatable and setreadonly and newcclosure then
+    pcall(function()
+        local grm = getrawmetatable(game)
+        setreadonly(grm, false)
+        local old = grm.__namecall
+        grm.__namecall = newcclosure(function(self, ...)
+            local args = {...}
+            local blocked = {
+                "TeleportDetect","CHECKER_1","CHECKER","GUI_CHECK",
+                "OneMoreTime","checkingSPEED","BANREMOTE","PERMAIDBAN",
+                "KICKREMOTE","BR_KICKPC","BR_KICKMOBILE"
+            }
+            for _,v in pairs(blocked) do
+                if tostring(args[1]) == v then return end
+            end
+            return old(self, ...)
+        end)
+    end)
+end
+
+-- ============================================================
+-- SAFE FARM ANTI-BAN
+-- ============================================================
+_G.SafeFarm = true
+spawn(function()
+    while wait() do
+        pcall(function()
+            if _G.SafeFarm then
+                for _,v in pairs(player.Character:GetDescendants()) do
+                    if v:IsA("LocalScript") then
+                        local bad = {"General","Shiftlock","FallDamage","4444","CamBob","JumpCD","Looking","Run"}
+                        for _,n in pairs(bad) do if v.Name == n then v:Destroy() end end
+                    end
+                end
+                for _,v in pairs(player.PlayerScripts:GetDescendants()) do
+                    if v:IsA("LocalScript") then
+                        local bad = {"RobloxMotor6DBugFix","Clans","Codes","CustomForceField","MenuBloodSp","PlayerList"}
+                        for _,n in pairs(bad) do if v.Name == n then v:Destroy() end end
+                    end
+                end
+            end
+        end)
+    end
+end)
+
+-- ============================================================
+-- WORLD DETECTION
+-- ============================================================
+local World1, World2, World3 = false, false, false
+if game.PlaceId == 2753915549 then World1 = true
+elseif game.PlaceId == 4442272183 then World2 = true
+elseif game.PlaceId == 7449423635 then World3 = true end
+
+-- ============================================================
+-- GLOBALS
+-- ============================================================
+local function round(n) return math.floor(tonumber(n) + 0.5) end
+local Number = math.random(1, 1000000)
+local _G = _G or {}
+
+-- ============================================================
+-- CONFIG
+-- ============================================================
+local Config = {
+    HubName     = "LP10 HUB",
+    AccentColor = Color3.fromRGB(33, 150, 243),
+    BgColor     = Color3.fromRGB(15, 15, 15),
+    BgColor2    = Color3.fromRGB(22, 22, 22),
+    TabBg       = Color3.fromRGB(18, 18, 18),
+    TextColor   = Color3.fromRGB(220, 220, 220),
+    MinSize     = Vector2.new(300, 220),
+    MaxSize     = Vector2.new(650, 500),
+}
+
+-- ============================================================
+-- SCREENGUI
+-- ============================================================
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "LP10_Final_Edition"
+ScreenGui.Parent = CoreGui
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+ScreenGui.ResetOnSpawn = false
+
+-- ============================================================
+-- DRAGGING FUNCTION
+-- ============================================================
+local function EnableDraggable(frame)
+    local dragging, dragInput, dragStart, startPos
+    frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            if not _G.IsResizing then
+                dragging = true
+                dragStart = input.Position
+                startPos = frame.Position
+                input.Changed:Connect(function()
+                    if input.UserInputState == Enum.UserInputState.End then dragging = false end
+                end)
+            end
+        end
+    end)
+    frame.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+            dragInput = input
+        end
+    end)
+    UserInputService.InputChanged:Connect(function(input)
+        if input == dragInput and dragging then
+            local delta = input.Position - dragStart
+            frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+    end)
+end
+
+-- ============================================================
+-- TOGGLE BUTTON
+-- ============================================================
+local ToggleBtn = Instance.new("TextButton")
+ToggleBtn.Name = "LP_Toggle"
+ToggleBtn.Parent = ScreenGui
+ToggleBtn.BackgroundColor3 = Config.BgColor
+ToggleBtn.Position = UDim2.new(0.05, 0, 0.08, 0)
+ToggleBtn.Size = UDim2.new(0, 60, 0, 60)
+ToggleBtn.AutoButtonColor = false
+ToggleBtn.Text = ""
+ToggleBtn.ZIndex = 10
+Instance.new("UICorner", ToggleBtn).CornerRadius = UDim.new(0, 15)
+local TS = Instance.new("UIStroke", ToggleBtn)
+TS.Color = Config.AccentColor
+TS.Thickness = 2
+
+local LP_Label = Instance.new("TextLabel", ToggleBtn)
+LP_Label.Size = UDim2.new(1, 0, 1, 0)
+LP_Label.BackgroundTransparency = 1
+LP_Label.Text = "LP"
+LP_Label.Font = Enum.Font.FredokaOne
+LP_Label.TextColor3 = Color3.fromRGB(255, 255, 255)
+LP_Label.TextScaled = true
+LP_Label.ZIndex = 11
+local G = Instance.new("UIGradient", LP_Label)
+G.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Config.AccentColor),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 100, 200))
+})
+Instance.new("UIPadding", LP_Label).PaddingBottom = UDim.new(0, 10)
+
+-- ============================================================
+-- MAIN FRAME
+-- ============================================================
+local Main = Instance.new("Frame")
+Main.Name = "MainFrame"
+Main.Parent = ScreenGui
+Main.BackgroundColor3 = Config.BgColor
+Main.Position = UDim2.new(0.5, -175, 0.5, -140)
+Main.Size = UDim2.new(0, 350, 0, 280)
+Main.Visible = false
+Main.Active = true
+Main.ClipsDescendants = true
+Main.ZIndex = 5
+Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 12)
+local MS = Instance.new("UIStroke", Main)
+MS.Color = Config.AccentColor
+MS.Thickness = 2
+
+-- Header
+local Header = Instance.new("TextLabel", Main)
+Header.Size = UDim2.new(1, 0, 0, 40)
+Header.BackgroundTransparency = 1
+Header.Font = Enum.Font.GothamBold
+Header.Text = "💎 " .. Config.HubName
+Header.TextColor3 = Config.AccentColor
+Header.TextSize = 16
+Header.ZIndex = 6
+
+-- Divider
+local Divider = Instance.new("Frame", Main)
+Divider.Size = UDim2.new(1, 0, 0, 1)
+Divider.Position = UDim2.new(0, 0, 0, 40)
+Divider.BackgroundColor3 = Config.AccentColor
+Divider.BorderSizePixel = 0
+Divider.ZIndex = 6
+
+-- ============================================================
+-- TAB BAR
+-- ============================================================
+local TabBar = Instance.new("ScrollingFrame", Main)
+TabBar.Size = UDim2.new(1, 0, 0, 32)
+TabBar.Position = UDim2.new(0, 0, 0, 41)
+TabBar.BackgroundColor3 = Config.TabBg
+TabBar.BorderSizePixel = 0
+TabBar.ScrollBarThickness = 0
+TabBar.CanvasSize = UDim2.new(0, 0, 0, 0)
+TabBar.AutomaticCanvasSize = Enum.AutomaticSize.X
+TabBar.ZIndex = 6
+
+local TabBarLayout = Instance.new("UIListLayout", TabBar)
+TabBarLayout.FillDirection = Enum.FillDirection.Horizontal
+TabBarLayout.Padding = UDim.new(0, 2)
+
+-- Content Area
+local ContentArea = Instance.new("ScrollingFrame", Main)
+ContentArea.Size = UDim2.new(1, 0, 1, -74)
+ContentArea.Position = UDim2.new(0, 0, 0, 74)
+ContentArea.BackgroundTransparency = 1
+ContentArea.BorderSizePixel = 0
+ContentArea.ScrollBarThickness = 3
+ContentArea.ScrollBarImageColor3 = Config.AccentColor
+ContentArea.CanvasSize = UDim2.new(0, 0, 0, 0)
+ContentArea.AutomaticCanvasSize = Enum.AutomaticSize.Y
+ContentArea.ZIndex = 6
+
+local ContentLayout = Instance.new("UIListLayout", ContentArea)
+ContentLayout.Padding = UDim.new(0, 4)
+ContentLayout.SortOrder = Enum.SortOrder.LayoutOrder
+
+local ContentPad = Instance.new("UIPadding", ContentArea)
+ContentPad.PaddingLeft = UDim.new(0, 6)
+ContentPad.PaddingRight = UDim.new(0, 6)
+ContentPad.PaddingTop = UDim.new(0, 4)
+
+-- Resize Handle
+local ResizeHandle = Instance.new("TextButton", Main)
+ResizeHandle.Size = UDim2.new(0, 20, 0, 20)
+ResizeHandle.Position = UDim2.new(1, -20, 1, -20)
+ResizeHandle.BackgroundTransparency = 1
+ResizeHandle.Text = "◢"
+ResizeHandle.TextColor3 = Config.AccentColor
+ResizeHandle.TextSize = 15
+ResizeHandle.ZIndex = 10
+
+local currentSize = Main.Size
+
+ResizeHandle.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        _G.IsResizing = true
+        local dragStart = input.Position
+        local startSize = Main.Size
+        local connection
+        connection = UserInputService.InputChanged:Connect(function(inp)
+            if inp.UserInputType == Enum.UserInputType.MouseMovement or inp.UserInputType == Enum.UserInputType.Touch then
+                local delta = inp.Position - dragStart
+                local newX = math.clamp(startSize.X.Offset + delta.X, Config.MinSize.X, Config.MaxSize.X)
+                local newY = math.clamp(startSize.Y.Offset + delta.Y, Config.MinSize.Y, Config.MaxSize.Y)
+                Main.Size = UDim2.new(0, newX, 0, newY)
+                currentSize = Main.Size
+            end
+        end)
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                _G.IsResizing = false
+                connection:Disconnect()
+            end
+        end)
+    end
+end)
+
+-- ============================================================
+-- TAB SYSTEM
+-- ============================================================
+local Tabs = {}
+local ActiveTab = nil
+local TabFrames = {}
+local TabButtons = {}
+
+local function CreateTab(name)
+    -- Tab Button
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(0, 85, 1, 0)
+    btn.BackgroundColor3 = Config.BgColor2
+    btn.Text = name
+    btn.Font = Enum.Font.GothamBold
+    btn.TextSize = 11
+    btn.TextColor3 = Config.TextColor
+    btn.AutoButtonColor = false
+    btn.BorderSizePixel = 0
+    btn.Parent = TabBar
+    btn.ZIndex = 7
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
+
+    -- Tab Content Frame (hidden by default)
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(1, 0, 0, 0)
+    frame.AutomaticSize = Enum.AutomaticSize.Y
+    frame.BackgroundTransparency = 1
+    frame.Visible = false
+    frame.Parent = ContentArea
+    frame.ZIndex = 6
+    frame.LayoutOrder = #Tabs + 1
+
+    local layout = Instance.new("UIListLayout", frame)
+    layout.Padding = UDim.new(0, 4)
+    layout.SortOrder = Enum.SortOrder.LayoutOrder
+
+    table.insert(Tabs, {btn = btn, frame = frame})
+    TabButtons[name] = btn
+    TabFrames[name] = frame
+
+    btn.MouseButton1Click:Connect(function()
+        -- Hide all
+        for _, t in pairs(Tabs) do
+            t.frame.Visible = false
+            t.btn.BackgroundColor3 = Config.BgColor2
+            t.btn.TextColor3 = Config.TextColor
+        end
+        -- Show this
+        frame.Visible = true
+        btn.BackgroundColor3 = Config.AccentColor
+        btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        ActiveTab = name
+        ContentArea.CanvasPosition = Vector2.new(0, 0)
+    end)
+
+    return frame
+end
+
+-- UI ELEMENT BUILDERS
+local function CreateToggle(parent, labelText, default, callback)
+    local row = Instance.new("Frame")
+    row.Size = UDim2.new(1, 0, 0, 34)
+    row.BackgroundColor3 = Config.BgColor2
+    row.BorderSizePixel = 0
+    row.Parent = parent
+    row.ZIndex = 7
+    Instance.new("UICorner", row).CornerRadius = UDim.new(0, 8)
+
+    local lbl = Instance.new("TextLabel", row)
+    lbl.Size = UDim2.new(1, -50, 1, 0)
+    lbl.Position = UDim2.new(0, 8, 0, 0)
+    lbl.BackgroundTransparency = 1
+    lbl.Font = Enum.Font.Gotham
+    lbl.TextSize = 12
+    lbl.TextColor3 = Config.TextColor
+    lbl.Text = labelText
+    lbl.TextXAlignment = Enum.TextXAlignment.Left
+    lbl.ZIndex = 8
+
+    local togBtn = Instance.new("TextButton", row)
+    togBtn.Size = UDim2.new(0, 36, 0, 20)
+    togBtn.Position = UDim2.new(1, -44, 0.5, -10)
+    togBtn.BackgroundColor3 = default and Config.AccentColor or Color3.fromRGB(60, 60, 60)
+    togBtn.Text = ""
+    togBtn.AutoButtonColor = false
+    togBtn.BorderSizePixel = 0
+    togBtn.ZIndex = 8
+    Instance.new("UICorner", togBtn).CornerRadius = UDim.new(1, 0)
+
+    local circle = Instance.new("Frame", togBtn)
+    circle.Size = UDim2.new(0, 14, 0, 14)
+    circle.Position = default and UDim2.new(1, -17, 0.5, -7) or UDim2.new(0, 3, 0.5, -7)
+    circle.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    circle.BorderSizePixel = 0
+    circle.ZIndex = 9
+    Instance.new("UICorner", circle).CornerRadius = UDim.new(1, 0)
+
+    local state = default or false
+
+    togBtn.MouseButton1Click:Connect(function()
+        state = not state
+        TweenService:Create(togBtn, TweenInfo.new(0.15), {
+            BackgroundColor3 = state and Config.AccentColor or Color3.fromRGB(60, 60, 60)
+        }):Play()
+        TweenService:Create(circle, TweenInfo.new(0.15), {
+            Position = state and UDim2.new(1, -17, 0.5, -7) or UDim2.new(0, 3, 0.5, -7)
+        }):Play()
+        if callback then callback(state) end
+    end)
+
+    return togBtn
+end
+
+local function CreateButton(parent, labelText, callback)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(1, 0, 0, 34)
+    btn.BackgroundColor3 = Config.AccentColor
+    btn.Text = labelText
+    btn.Font = Enum.Font.GothamBold
+    btn.TextSize = 12
+    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btn.AutoButtonColor = false
+    btn.BorderSizePixel = 0
+    btn.Parent = parent
+    btn.ZIndex = 7
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 8)
+    btn.MouseButton1Click:Connect(function()
+        TweenService:Create(btn, TweenInfo.new(0.1), {BackgroundColor3 = Color3.fromRGB(20, 120, 220)}):Play()
+        task.delay(0.15, function() TweenService:Create(btn, TweenInfo.new(0.1), {BackgroundColor3 = Config.AccentColor}):Play() end)
+        if callback then callback() end
+    end)
+    return btn
+end
+
+local function CreateLabel(parent, text, color)
+    local lbl = Instance.new("TextLabel")
+    lbl.Size = UDim2.new(1, 0, 0, 28)
+    lbl.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+    lbl.Font = Enum.Font.GothamBold
+    lbl.TextSize = 11
+    lbl.TextColor3 = color or Config.AccentColor
+    lbl.Text = "— " .. text .. " —"
+    lbl.BorderSizePixel = 0
+    lbl.Parent = parent
+    lbl.ZIndex = 7
+    Instance.new("UICorner", lbl).CornerRadius = UDim.new(0, 6)
+    return lbl
+end
+
+local function CreateSlider(parent, labelText, min, max, default, callback)
+    local container = Instance.new("Frame")
+    container.Size = UDim2.new(1, 0, 0, 50)
+    container.BackgroundColor3 = Config.BgColor2
+    container.BorderSizePixel = 0
+    container.Parent = parent
+    container.ZIndex = 7
+    Instance.new("UICorner", container).CornerRadius = UDim.new(0, 8)
+
+    local lbl = Instance.new("TextLabel", container)
+    lbl.Size = UDim2.new(1, -50, 0, 20)
+    lbl.Position = UDim2.new(0, 8, 0, 4)
+    lbl.BackgroundTransparency = 1
+    lbl.Font = Enum.Font.Gotham
+    lbl.TextSize = 11
+    lbl.TextColor3 = Config.TextColor
+    lbl.Text = labelText
+    lbl.TextXAlignment = Enum.TextXAlignment.Left
+    lbl.ZIndex = 8
+
+    local valLbl = Instance.new("TextLabel", container)
+    valLbl.Size = UDim2.new(0, 40, 0, 20)
+    valLbl.Position = UDim2.new(1, -48, 0, 4)
+    valLbl.BackgroundTransparency = 1
+    valLbl.Font = Enum.Font.GothamBold
+    valLbl.TextSize = 11
+    valLbl.TextColor3 = Config.AccentColor
+    valLbl.Text = tostring(default)
+    valLbl.ZIndex = 8
+
+    local track = Instance.new("Frame", container)
+    track.Size = UDim2.new(1, -16, 0, 6)
+    track.Position = UDim2.new(0, 8, 0, 30)
+    track.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    track.BorderSizePixel = 0
+    track.ZIndex = 8
+    Instance.new("UICorner", track).CornerRadius = UDim.new(1, 0)
+
+    local fill = Instance.new("Frame", track)
+    fill.Size = UDim2.new((default - min) / (max - min), 0, 1, 0)
+    fill.BackgroundColor3 = Config.AccentColor
+    fill.BorderSizePixel = 0
+    fill.ZIndex = 9
+    Instance.new("UICorner", fill).CornerRadius = UDim.new(1, 0)
+
+    local value = default
+    local dragging = false
+
+    local function update(input)
+        local rel = math.clamp((input.Position.X - track.AbsolutePosition.X) / track.AbsoluteSize.X, 0, 1)
+        value = math.floor(min + (max - min) * rel)
+        fill.Size = UDim2.new(rel, 0, 1, 0)
+        valLbl.Text = tostring(value)
+        if callback then callback(value) end
+    end
+
+    track.InputBegan:Connect(function(i)
+        if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
+            dragging = true; update(i)
+        end
+    end)
+    UserInputService.InputChanged:Connect(function(i)
+        if dragging and (i.UserInputType == Enum.UserInputType.MouseMovement or i.UserInputType == Enum.UserInputType.Touch) then
+            update(i)
+        end
+    end)
+    UserInputService.InputEnded:Connect(function(i)
+        if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
+            dragging = false
+        end
+    end)
+
+    return container
+end
+
+-- ============================================================
+-- CREATE TABS
+-- ============================================================
+local Tab_Settings  = CreateTab("⚙ Settings")
+local Tab_Farm      = CreateTab("🌾 Auto Farm")
+local Tab_Quest     = CreateTab("📋 Quest")
+local Tab_Sea       = CreateTab("🌊 Sea Event")
+local Tab_Stats     = CreateTab("📊 Auto Stats")
+local Tab_Tele      = CreateTab("🗺 World Tele")
+local Tab_PvP       = CreateTab("⚔ Player PvP")
+local Tab_Race      = CreateTab("🏁 Race V4")
+local Tab_Raid      = CreateTab("🏰 Dungeon")
+local Tab_Demon     = CreateTab("👹 Fruit Demon")
+local Tab_ESP       = CreateTab("👁 ESP")
+local Tab_Misc      = CreateTab("🔧 Misc")
+
+-- Activate first tab
+Tabs[1].frame.Visible = true
+Tabs[1].btn.BackgroundColor3 = Config.AccentColor
+Tabs[1].btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+ActiveTab = "⚙ Settings"
+
+-- ============================================================
+-- ⚙ SETTINGS TAB
+-- ============================================================
+CreateLabel(Tab_Settings, "Farm Settings", Config.AccentColor)
+
+CreateToggle(Tab_Settings, "Safe Farm (Anti-Ban)", true, function(v)
+    _G.SafeFarm = v
+end)
+
+CreateToggle(Tab_Settings, "Auto Reconnect", false, function(v)
+    _G.AutoReconnect = v
+end)
+
+CreateToggle(Tab_Settings, "No Clip", false, function(v)
+    _G.NoClip = v
+    if v then
+        RunService.Stepped:Connect(function()
+            if _G.NoClip and player.Character then
+                for _, part in pairs(player.Character:GetDescendants()) do
+                    if part:IsA("BasePart") then part.CanCollide = false end
+                end
+            end
+        end)
+    end
+end)
+
+CreateToggle(Tab_Settings, "Fast Run", false, function(v)
+    _G.FastRun = v
+    if player.Character then
+        local hum = player.Character:FindFirstChildOfClass("Humanoid")
+        if hum then hum.WalkSpeed = v and 50 or 16 end
+    end
+end)
+
+CreateSlider(Tab_Settings, "Walk Speed", 16, 100, 16, function(v)
+    if player.Character then
+        local hum = player.Character:FindFirstChildOfClass("Humanoid")
+        if hum then hum.WalkSpeed = v end
+    end
+end)
+
+CreateSlider(Tab_Settings, "Jump Power", 7, 100, 7, function(v)
+    if player.Character then
+        local hum = player.Character:FindFirstChildOfClass("Humanoid")
+        if hum then hum.JumpPower = v end
+    end
+end)
+
+CreateLabel(Tab_Settings, "Server", Config.AccentColor)
+
+CreateButton(Tab_Settings, "🔄 Rejoin Server", function()
+    game:GetService("TeleportService"):Teleport(game.PlaceId, player)
+end)
+
+CreateButton(Tab_Settings, "🔀 Hop Server", function()
+    pcall(function()
+        local PlaceID = game.PlaceId
+        local Site = game.HttpService:JSONDecode(game:HttpGet('https://games.roblox.com/v1/games/'..PlaceID..'/servers/Public?sortOrder=Asc&limit=100'))
+        for _, v in pairs(Site.data) do
+            if tonumber(v.maxPlayers) > tonumber(v.playing) then
+                game:GetService("TeleportService"):TeleportToPlaceInstance(PlaceID, v.id, player)
+                break
+            end
+        end
+    end)
+end)
+
+-- ============================================================
+-- 🌾 AUTO FARM TAB
+-- ============================================================
+CreateLabel(Tab_Farm, "Auto Farm", Config.AccentColor)
+
+CreateToggle(Tab_Farm, "Auto Farm (Auto Quest)", false, function(v)
+    _G.AutoFarm = v
+end)
+
+CreateToggle(Tab_Farm, "Auto Attack", false, function(v)
+    _G.AutoAttack = v
+    if v then
+        spawn(function()
+            while _G.AutoAttack do
+                wait(0.05)
+                pcall(function()
+                    if player.Character then
+                        local hum = player.Character:FindFirstChildOfClass("Humanoid")
+                        if hum and hum.Health > 0 then
+                            local enemies = workspace:GetDescendants()
+                            for _, e in pairs(enemies) do
+                                if e:IsA("Humanoid") and e ~= hum and e.Health > 0 then
+                                    local root = e.Parent:FindFirstChild("HumanoidRootPart")
+                                    if root then
+                                        local dist = (player.Character.HumanoidRootPart.Position - root.Position).Magnitude
+                                        if dist < 20 then
+                                            if mouse1click then mouse1click() end
+                                        end
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end)
+            end
+        end)
+    end
+end)
+
+CreateToggle(Tab_Farm, "Auto Skill (Z X C V)", false, function(v)
+    _G.AutoSkill = v
+    if v then
+        spawn(function()
+            while _G.AutoSkill do
+                pcall(function()
+                    for _, key in pairs({"Z","X","C","V"}) do
+                        game:GetService("VirtualInputManager"):SendKeyEvent(true, key, false, game)
+                        wait(0.1)
+                        game:GetService("VirtualInputManager"):SendKeyEvent(false, key, false, game)
+                    end
+                end)
+                wait(0.1)
+            end
+        end)
+    end
+end)
+
+CreateToggle(Tab_Farm, "Auto Collect Fruit", false, function(v)
+    _G.AutoCollectFruit = v
+    if v then
+        spawn(function()
+            while _G.AutoCollectFruit do
+                wait(1)
+                pcall(function()
+                    for _, obj in pairs(workspace:GetChildren()) do
+                        if string.find(obj.Name, "Fruit") then
+                            local handle = obj:FindFirstChild("Handle")
+                            if handle then
+                                local dist = (player.Character.HumanoidRootPart.Position - handle.Position).Magnitude
+                                if dist < 10 then
+                                    player.Character.HumanoidRootPart.CFrame = handle.CFrame
+                                end
+                            end
+                        end
+                    end
+                end)
+            end
+        end)
+    end
+end)
+
+CreateToggle(Tab_Farm, "Auto Chest Farm", false, function(v)
+    _G.AutoChest = v
+    if v then
+        spawn(function()
+            while _G.AutoChest do
+                wait(1)
+                pcall(function()
+                    for _, obj in pairs(workspace:GetChildren()) do
+                        if string.find(obj.Name, "Chest") then
+                            local dist = (player.Character.HumanoidRootPart.Position - obj.Position).Magnitude
+                            if dist < 5 then
+                                -- auto open
+                            elseif dist < 500 then
+                                player.Character.HumanoidRootPart.CFrame = obj.CFrame * CFrame.new(0, 0, -3)
+                            end
+                        end
+                    end
+                end)
+            end
+        end)
+    end
+end)
+
+CreateLabel(Tab_Farm, "Auto Farm Loop", Config.AccentColor)
+
+spawn(function()
+    while wait(0.1) do
+        pcall(function()
+            if _G.AutoFarm then
+                -- CheckQuest and farm logic
+                local myLevel = player.Data and player.Data.Level and player.Data.Level.Value or 0
+                -- Teleport to monster and attack
+                if _G.CFrameMon then
+                    local dist = (player.Character.HumanoidRootPart.Position - _G.CFrameMon.Position).Magnitude
+                    if dist > 10 then
+                        player.Character.HumanoidRootPart.CFrame = _G.CFrameMon
+                    end
+                end
+            end
+        end)
+    end
+end)
+
+-- ============================================================
+-- 📋 ITEM QUEST TAB  
+-- ============================================================
+CreateLabel(Tab_Quest, "Quest Settings", Config.AccentColor)
+
+CreateToggle(Tab_Quest, "Auto Quest", false, function(v)
+    _G.AutoQuest = v
+end)
+
+CreateToggle(Tab_Quest, "Auto Complete Quest", false, function(v)
+    _G.AutoCompleteQuest = v
+    if v then
+        spawn(function()
+            while _G.AutoCompleteQuest do
+                wait(1)
+                pcall(function()
+                    RS.Remotes.CommF_:InvokeServer("AbandonQuest")
+                end)
+            end
+        end)
+    end
+end)
+
+CreateButton(Tab_Quest, "🎯 Get Current Quest", function()
+    pcall(function()
+        local level = player.Data.Level.Value
+        print("Level: " .. level)
+    end)
+end)
+
+-- ============================================================
+-- 🌊 SEA EVENT TAB
+-- ============================================================
+CreateLabel(Tab_Sea, "Sea Event", Config.AccentColor)
+
+CreateToggle(Tab_Sea, "Auto Sea Beast", false, function(v)
+    _G.Auto_Seabest = v
+end)
+
+CreateToggle(Tab_Sea, "Sea ESP", false, function(v)
+    _G.SeaESP = v
+end)
+
+CreateToggle(Tab_Sea, "Auto Buy Boat", false, function(v)
+    _G.AutoBuyBoat = v
+    if v then
+        spawn(function()
+            while _G.AutoBuyBoat do
+                wait(2)
+                pcall(function()
+                    RS.Remotes.CommF_:InvokeServer("BuyBoat", "PirateBrigade")
+                end)
+            end
+        end)
+    end
+end)
+
+-- ============================================================
+-- 📊 AUTO STATS TAB
+-- ============================================================
+CreateLabel(Tab_Stats, "Auto Stats", Config.AccentColor)
+
+CreateToggle(Tab_Stats, "Auto Stats Melee", false, function(v)
+    _G.AutoMelee = v
+    if v then
+        spawn(function()
+            while _G.AutoMelee do
+                wait(1)
+                pcall(function()
+                    RS.Remotes.CommF_:InvokeServer("AddStats","Melee")
+                end)
+            end
+        end)
+    end
+end)
+
+CreateToggle(Tab_Stats, "Auto Stats Defense", false, function(v)
+    _G.AutoDefense = v
+    if v then
+        spawn(function()
+            while _G.AutoDefense do
+                wait(1)
+                pcall(function()
+                    RS.Remotes.CommF_:InvokeServer("AddStats","Defense")
+                end)
+            end
+        end)
+    end
+end)
+
+CreateToggle(Tab_Stats, "Auto Stats Sword", false, function(v)
+    _G.AutoSword = v
+    if v then
+        spawn(function()
+            while _G.AutoSword do
+                wait(1)
+                pcall(function()
+                    RS.Remotes.CommF_:InvokeServer("AddStats","Sword")
+                end)
+            end
+        end)
+    end
+end)
+
+CreateToggle(Tab_Stats, "Auto Stats Gun", false, function(v)
+    _G.AutoGun = v
+    if v then
+        spawn(function()
+            while _G.AutoGun do
+                wait(1)
+                pcall(function()
+                    RS.Remotes.CommF_:InvokeServer("AddStats","Gun")
+                end)
+            end
+        end)
+    end
+end)
+
+CreateToggle(Tab_Stats, "Auto Stats Fruit", false, function(v)
+    _G.AutoFruitStat = v
+    if v then
+        spawn(function()
+            while _G.AutoFruitStat do
+                wait(1)
+                pcall(function()
+                    RS.Remotes.CommF_:InvokeServer("AddStats","Devil Fruit")
+                end)
+            end
+        end)
+    end
+end)
+
+-- ============================================================
+-- 🗺 WORLD TELEPORT TAB
+-- ============================================================
+CreateLabel(Tab_Tele, "World Teleport", Config.AccentColor)
+
+local Locations = {
+    -- World 1
+    ["🏝 Starter Island"]    = CFrame.new(1059.37, 15.45, 1550.42),
+    ["🌴 Jungle"]            = CFrame.new(-1598.09, 35.55, 153.38),
+    ["❄ Snow Island"]        = CFrame.new(1389.74, 88.15, -1298.91),
+    ["⛵ Pirate Village"]    = CFrame.new(-1141.07, 4.10, 3831.55),
+    ["🏜 Desert"]            = CFrame.new(894.49, 5.14, 4392.43),
+    ["🌊 Marine Base"]       = CFrame.new(-5039.59, 27.35, 4324.68),
+    ["☁ Sky Island"]         = CFrame.new(-4839.53, 716.37, -2619.44),
+    -- World 2
+    ["🏔 Magma Village"]     = CFrame.new(-5313.37, 10.95, 8515.29),
+    ["🐟 Fishman Island"]    = CFrame.new(61122.65, 18.50, 1569.40),
+    ["☁ Upper Skylands"]    = CFrame.new(-4721.89, 843.87, -1949.97),
+    -- World 3  
+    ["🏴‍☠️ Pirate Port"]     = CFrame.new(-290.07, 42.90, 5581.59),
+    ["🌺 Amazon"]            = CFrame.new(5832.84, 51.68, -1101.52),
+    ["🌲 Marine Tree"]       = CFrame.new(2180.54, 27.82, -6741.55),
+    ["👻 Haunted Castle"]    = CFrame.new(-9479.22, 141.22, 5566.09),
+    ["🍭 Candy Island"]      = CFrame.new(-1150.04, 20.38, -14446.33),
+}
+
+for name, cf in pairs(Locations) do
+    CreateButton(Tab_Tele, "📍 " .. name, function()
+        pcall(function()
+            player.Character.HumanoidRootPart.CFrame = cf
+        end)
+    end)
+end
+
+-- ============================================================
+-- ⚔ PLAYER PVP TAB
+-- ============================================================
+CreateLabel(Tab_PvP, "PvP Settings", Config.AccentColor)
+
+CreateToggle(Tab_PvP, "God Mode (Anti-Kill)", false, function(v)
+    _G.GodMode = v
+    if v then
+        spawn(function()
+            while _G.GodMode do
+                wait(0.1)
+                pcall(function()
+                    if player.Character then
+                        local hum = player.Character:FindFirstChildOfClass("Humanoid")
+                        if hum then hum.Health = hum.MaxHealth end
+                    end
+                end)
+            end
+        end)
+    end
+end)
+
+CreateToggle(Tab_PvP, "Kill Aura", false, function(v)
+    _G.KillAura = v
+    if v then
+        spawn(function()
+            while _G.KillAura do
+                wait(0.1)
+                pcall(function()
+                    for _, p in pairs(Players:GetPlayers()) do
+                        if p ~= player and p.Character then
+                            local root = p.Character:FindFirstChild("HumanoidRootPart")
+                            if root then
+                                local dist = (player.Character.HumanoidRootPart.Position - root.Position).Magnitude
+                                if dist < 15 then
+                                    if mouse1click then mouse1click() end
+                                end
+                            end
+                        end
+                    end
+                end)
+            end
+        end)
+    end
+end)
+
+CreateToggle(Tab_PvP, "Fly", false, function(v)
+    _G.Fly = v
+    if v then
+        local bv = Instance.new("BodyVelocity")
+        bv.Velocity = Vector3.new(0, 0, 0)
+        bv.MaxForce = Vector3.new(1e5, 1e5, 1e5)
+        bv.Parent = player.Character.HumanoidRootPart
+        spawn(function()
+            while _G.Fly do
+                wait()
+                bv.Velocity = Vector3.new(0, 30, 0)
+            end
+            bv:Destroy()
+        end)
+    end
+end)
+
+CreateSlider(Tab_PvP, "Kill Aura Range", 5, 50, 15, function(v)
+    _G.KillAuraRange = v
+end)
+
+-- ============================================================
+-- 🏁 RACE V4 TAB
+-- ============================================================
+CreateLabel(Tab_Race, "Race V4", Config.AccentColor)
+
+CreateToggle(Tab_Race, "Auto Race V4 (Ghoul)", false, function(v)
+    _G.AutoRaceGhoul = v
+end)
+
+CreateToggle(Tab_Race, "Auto Race V4 (Cyborg)", false, function(v)
+    _G.AutoRaceCyborg = v
+end)
+
+CreateButton(Tab_Race, "💨 Teleport to Race NPC", function()
+    pcall(function()
+        player.Character.HumanoidRootPart.CFrame = CFrame.new(-1408.56, 45.54, -2370.01)
+    end)
+end)
+
+-- ============================================================
+-- 🏰 DUNGEON RAID TAB
+-- ============================================================
+CreateLabel(Tab_Raid, "Dungeon / Raid", Config.AccentColor)
+
+CreateToggle(Tab_Raid, "Auto Dungeon Farm", false, function(v)
+    _G.AutoDungeon = v
+end)
+
+CreateButton(Tab_Raid, "🏰 TP to Dungeon", function()
+    pcall(function()
+        RS.Remotes.CommF_:InvokeServer("requestEntrance", Vector3.new(0, 0, 0))
+    end)
+end)
+
+-- ============================================================
+-- 👹 FRUIT DEMON TAB
+-- ============================================================
+CreateLabel(Tab_Demon, "Fruit Demon", Config.AccentColor)
+
+CreateToggle(Tab_Demon, "Auto Fruit Demon Farm", false, function(v)
+    _G.AutoDemon = v
+end)
+
+CreateToggle(Tab_Demon, "Auto Eat Fruit", false, function(v)
+    _G.AutoEatFruit = v
+    if v then
+        spawn(function()
+            while _G.AutoEatFruit do
+                wait(1)
+                pcall(function()
+                    for _, tool in pairs(player.Backpack:GetChildren()) do
+                        if string.find(tool.Name, "Fruit") or string.find(tool.Name, "fruit") then
+                            player.Character.Humanoid:EquipTool(tool)
+                            wait(0.5)
+                            RS.Remotes.CommF_:InvokeServer("EatFruit", tool.Name)
+                        end
+                    end
+                end)
+            end
+        end)
+    end
+end)
+
+-- ============================================================
+-- 👁 ESP TAB
+-- ============================================================
+CreateLabel(Tab_ESP, "Player ESP", Config.AccentColor)
+
+CreateToggle(Tab_ESP, "Player Name ESP", false, function(v)
+    _G.ESPPlayer = v
+end)
+
+CreateToggle(Tab_ESP, "Chest ESP", false, function(v)
+    _G.ChestESP = v
+end)
+
+CreateToggle(Tab_ESP, "Devil Fruit ESP", false, function(v)
+    _G.DevilFruitESP = v
+end)
+
+CreateToggle(Tab_ESP, "Flower ESP", false, function(v)
+    _G.FlowerESP = v
+end)
+
+CreateToggle(Tab_ESP, "Real Fruit ESP", false, function(v)
+    _G.RealFruitESP = v
+end)
+
+CreateToggle(Tab_ESP, "Island ESP", false, function(v)
+    _G.IslandESP = v
+end)
+
+CreateToggle(Tab_ESP, "Sea Beast ESP", false, function(v)
+    _G.SeaESP = v
+end)
+
+CreateToggle(Tab_ESP, "NPC ESP", false, function(v)
+    _G.NpcESP = v
+end)
+
+CreateToggle(Tab_ESP, "Mirage Island ESP", false, function(v)
+    _G.MirageIslandESP = v
+end)
+
+CreateToggle(Tab_ESP, "AFD ESP", false, function(v)
+    _G.AfdESP = v
+end)
+
+-- ESP Update Loops
+spawn(function()
+    while wait(0.5) do
+        pcall(function()
+            -- Player ESP
+            for _, p in pairs(Players:GetPlayers()) do
+                if p.Character and p.Character:FindFirstChild("Head") then
+                    local head = p.Character.Head
+                    if _G.ESPPlayer then
+                        if not head:FindFirstChild("LP_ESP_"..Number) then
+                            local bill = Instance.new("BillboardGui", head)
+                            bill.Name = "LP_ESP_"..Number
+                            bill.Size = UDim2.new(0, 200, 0, 30)
+                            bill.StudsOffset = Vector3.new(0, 2, 0)
+                            bill.AlwaysOnTop = true
+                            local lbl = Instance.new("TextLabel", bill)
+                            lbl.Size = UDim2.new(1,0,1,0)
+                            lbl.BackgroundTransparency = 1
+                            lbl.Font = Enum.Font.GothamBold
+                            lbl.TextSize = 14
+                            lbl.TextStrokeTransparency = 0.5
+                            lbl.TextColor3 = p.Team == player.Team and Color3.new(0,1,0) or Color3.new(1,0,0)
+                        end
+                        local lbl = head:FindFirstChild("LP_ESP_"..Number) and head["LP_ESP_"..Number]:FindFirstChildOfClass("TextLabel")
+                        if lbl then
+                            local dist = round((player.Character.Head.Position - head.Position).Magnitude / 3)
+                            local hp = round(p.Character.Humanoid.Health / p.Character.Humanoid.MaxHealth * 100)
+                            lbl.Text = p.Name .. " | " .. dist .. "m | " .. hp .. "% HP"
+                        end
+                    else
+                        if head:FindFirstChild("LP_ESP_"..Number) then
+                            head["LP_ESP_"..Number]:Destroy()
+                        end
+                    end
+                end
+            end
+        end)
+    end
+end)
+
+-- ============================================================
+-- 🔧 MISC TAB
+-- ============================================================
+CreateLabel(Tab_Misc, "Miscellaneous", Config.AccentColor)
+
+CreateToggle(Tab_Misc, "Anti-Flashbang", false, function(v)
+    _G.AntiFlash = v
+    if v then
+        spawn(function()
+            while _G.AntiFlash do
+                wait(0.2)
+                pcall(function()
+                    local gui = player.PlayerGui:FindFirstChild("FlashbangEffect")
+                    if gui then gui:Destroy() end
+                end)
+            end
+        end)
+    end
+end)
+
+CreateToggle(Tab_Misc, "Full Bright", false, function(v)
+    game:GetService("Lighting").Brightness = v and 10 or 1
+    game:GetService("Lighting").ClockTime = v and 14 or 14
+end)
+
+CreateToggle(Tab_Misc, "Infinite Jump", false, function(v)
+    _G.InfJump = v
+    if v then
+        UserInputService.JumpRequest:Connect(function()
+            if _G.InfJump and player.Character then
+                local hum = player.Character:FindFirstChildOfClass("Humanoid")
+                if hum then hum:ChangeState(Enum.HumanoidStateType.Jumping) end
+            end
+        end)
+    end
+end)
+
+CreateToggle(Tab_Misc, "Auto Revive", false, function(v)
+    _G.AutoRevive = v
+    if v then
+        spawn(function()
+            while _G.AutoRevive do
+                wait(1)
+                pcall(function()
+                    if player.Character then
+                        local hum = player.Character:FindFirstChildOfClass("Humanoid")
+                        if hum and hum.Health <= 0 then
+                            RS.Remotes.CommF_:InvokeServer("RespawnRequest")
+                        end
+                    end
+                end)
+            end
+        end)
+    end
+end)
+
+CreateButton(Tab_Misc, "💊 Heal Character", function()
+    pcall(function()
+        if player.Character then
+            local hum = player.Character:FindFirstChildOfClass("Humanoid")
+            if hum then hum.Health = hum.MaxHealth end
+        end
+    end)
+end)
+
+CreateButton(Tab_Misc, "🔄 Reset Character", function()
+    pcall(function()
+        if player.Character then
+            local hum = player.Character:FindFirstChildOfClass("Humanoid")
+            if hum then hum.Health = 0 end
+        end
+    end)
+end)
+
+-- ============================================================
+-- INITIALIZE DRAGGING & TOGGLE
+-- ============================================================
+EnableDraggable(Main)
+EnableDraggable(ToggleBtn)
+
+local isOpen = false
+ToggleBtn.MouseButton1Click:Connect(function()
+    isOpen = not isOpen
+    if isOpen then
+        Main.Visible = true
+        Main:TweenSize(currentSize, "Out", "Back", 0.3, true)
+    else
+        Main:TweenSize(UDim2.new(0, 0, 0, 0), "In", "Back", 0.3, true, function()
+            if not isOpen then Main.Visible = false end
+        end)
+    end
+end)
+
+-- ============================================================
+-- NOTIFICATION
+-- ============================================================
+game:GetService("StarterGui"):SetCore("SendNotification", {
+    Title = "LP10 HUB",
+    Text = "Blox Fruits Edition Loaded! by @LPOLVO",
+    Duration = 4,
+})
+
+print("LP10 HUB: Blox Fruits Edition Loaded! by @LPOLVO")
